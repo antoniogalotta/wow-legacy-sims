@@ -1,0 +1,24 @@
+{
+	"name": "WotLK Sim Development",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "wotlk-sims-dev",
+	"workspaceFolder": "/wotlk",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"go.toolsManagement.checkForUpdates": "local",
+				"go.useLanguageServer": true,
+				"go.gopath": "/go"
+			},
+			"extensions": [
+				"golang.Go",
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"ms-vscode.cpptools"
+			]
+		}
+	},
+	"overrideCommand": false,
+	"remoteUser": "vscode",
+	"postCreateCommand": "npm install"
+}
