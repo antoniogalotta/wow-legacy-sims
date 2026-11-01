@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  wotlk-sims-dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    tty: true
+    volumes:
+      - ..:/wotlk:cached
+    
+    # Forward the server and UI ports
+    ports:
+      - "3333:3333"
+      - "8080:8080"
+
