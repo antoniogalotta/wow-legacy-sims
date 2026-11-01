@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	iofs "io/fs"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -264,16 +265,34 @@ func (s *server) setupAsyncServer() {
 	})
 }
 
+// uiBasePath returns the URL path of the UI, named after the first directory in fsys.
+func uiBasePath(fsys iofs.FS) string {
+	entries, err := iofs.ReadDir(fsys, ".")
+	if err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				return "/sims/wotlk/" + entry.Name() + "/"
+			}
+		}
+	}
+	return "/sims/wotlk/"
+}
+
 func (s *server) runServer(useFS bool, host string, launchBrowser bool, simName string, wasm bool, inputReader *bufio.Reader) {
 	s.setupAsyncServer()
 
+	// The UI is built for /sims/wotlk/<branch>/ (see vite.config.js).
 	var fs http.Handler
+	var uiPath string
 	if useFS {
 		log.Printf("Using local file system for development.")
 		fs = http.FileServer(http.Dir("./dist"))
+		uiPath = uiBasePath(os.DirFS("./dist/sims/wotlk"))
 	} else {
 		log.Printf("Embedded file server running.")
-		fs = http.FileServer(http.FS(dist.FS))
+		// The embedded FS only holds the <branch> directory, so strip the prefix above it.
+		fs = http.StripPrefix("/sims/wotlk", http.FileServer(http.FS(dist.FS)))
+		uiPath = uiBasePath(dist.FS)
 	}
 
 	for route := range handlers {
@@ -286,7 +305,7 @@ func (s *server) runServer(useFS bool, host string, launchBrowser bool, simName 
 	})
 	http.HandleFunc("/", func(resp http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/" {
-			http.Redirect(resp, req, "/wotlk/", http.StatusPermanentRedirect)
+			http.Redirect(resp, req, uiPath, http.StatusTemporaryRedirect)
 			return
 		}
 		resp.Header().Add("Cache-Control", "no-cache")
@@ -308,7 +327,7 @@ func (s *server) runServer(useFS bool, host string, launchBrowser bool, simName 
 		if strings.HasPrefix(host, ":") {
 			host = "localhost" + host
 		}
-		url := fmt.Sprintf("http://%s/wotlk/%s", host, simName)
+		url := fmt.Sprintf("http://%s%s%s", host, uiPath, simName)
 		log.Printf("Launching interface on %s", url)
 		go func() {
 			err := browser.OpenURL(url)
