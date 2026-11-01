@@ -76,12 +76,19 @@
             "electron-main.js",
             "assets/favicon_io/favicon-32x32.png"
         ],
+        "afterPack": "./build/electron-after-pack.js",
         "linux": {
             "target": [
                 "AppImage",
                 "deb"
             ],
-            "category": "Games"
+            "category": "Games",
+            "executableArgs": [
+                "--disable-setuid-sandbox"
+            ]
+        },
+        "deb": {
+            "appArmorProfile": "build/apparmor-profile"
         },
         "extraResources": [
             {
