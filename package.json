@@ -8,6 +8,7 @@
     "volta": {
         "node": ">=18"
     },
+    "main": "electron-main.js",
     "scripts": {
         "build": "bazel build //...",
         "test": "bazel test //...",
@@ -22,7 +23,8 @@
         "lint:json:fix": "npm run lint:json -- --fix",
         "prettier": "npx prettier \"./ui/**/*.{js,jsx,ts,tsx,scss,css,json}\" --check",
         "prettier:fix": "npm run prettier -- --write",
-        "type-check": "tsc --noEmit"
+        "type-check": "tsc --noEmit",
+        "electron:dev": "electron ."
     },
     "dependencies": {
         "@popperjs/core": "^2.11.6",
@@ -41,6 +43,8 @@
         "@types/node": "^18.16.1",
         "@typescript-eslint/eslint-plugin": "^5.62.0",
         "@typescript-eslint/parser": "^5.62.0",
+        "electron": "^42.3.0",
+        "electron-builder": "^26.8.1",
         "eslint": "^8.56.0",
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-import": "^2.28.1",
@@ -60,5 +64,41 @@
         "typescript": "5.2.2",
         "typescript-formatter": "^7.2.2",
         "vite": "^3.0.3"
+    },
+    "build": {
+        "appId": "com.wowlegacysims.wotlk",
+        "productName": "WoW WotLK Simulator",
+        "icon": "assets/favicon_io/android-chrome-512x512.png",
+        "directories": {
+            "output": "release/electron"
+        },
+        "files": [
+            "electron-main.js",
+            "assets/favicon_io/favicon-32x32.png"
+        ],
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb"
+            ],
+            "category": "Games"
+        },
+        "extraResources": [
+            {
+                "from": "electron-server/${os}-${arch}",
+                "to": "server"
+            }
+        ],
+        "win": {
+            "target": [
+                "nsis"
+            ]
+        },
+        "mac": {
+            "target": [
+                "dmg"
+            ],
+            "category": "public.app-category.games"
+        }
     }
 }

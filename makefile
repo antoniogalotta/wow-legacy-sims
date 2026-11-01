@@ -190,6 +190,34 @@ release: wowsimwotlk wowsimwotlk-windows.exe
 # Now compress into a zip because the files are getting large.
 	cd ./release/BRANCH/ && zip wowsimwotlk-windows.exe.zip wowsimwotlk-windows.exe && zip wowsimwotlk-amd64-darwin.zip wowsimwotlk-amd64-darwin && zip wowsimwotlk-arm64-darwin.zip wowsimwotlk-arm64-darwin && zip wowsimwotlk-amd64-linux.zip wowsimwotlk-amd64-linux && zip wowsimcli-amd64-linux.zip wowsimcli-amd64-linux && zip wowsimcli-windows.exe.zip wowsimcli-windows.exe
 
+# Electron desktop app: `make electron-linux`, `make electron-windows` or `make electron-mac`.
+# The server is built for the target platform into electron-server/<os>-<arch>/, which
+# electron-builder packages for the same ${os}-${arch} (see "build" in package.json).
+ELECTRON_LDFLAGS := -X 'main.Version=$(VERSION)' -s -w
+
+.PHONY: electron-server-linux electron-server-windows electron-server-mac
+electron-server-linux: binary_dist binary_dist/dist.go sim/core/proto/api.pb.go
+	GOOS=linux GOARCH=amd64 GOAMD64=v2 go build -o electron-server/linux-x64/wowsimwotlk -ldflags="$(ELECTRON_LDFLAGS)" ./sim/web/main.go
+
+electron-server-windows: binary_dist binary_dist/dist.go sim/core/proto/api.pb.go
+	GOOS=windows GOARCH=amd64 GOAMD64=v2 go build -o electron-server/win-x64/wowsimwotlk.exe -ldflags="$(ELECTRON_LDFLAGS)" ./sim/web/main.go
+
+electron-server-mac: binary_dist binary_dist/dist.go sim/core/proto/api.pb.go
+	GOOS=darwin GOARCH=amd64 GOAMD64=v2 go build -o electron-server/mac-x64/wowsimwotlk -ldflags="$(ELECTRON_LDFLAGS)" ./sim/web/main.go
+	GOOS=darwin GOARCH=arm64 go build -o electron-server/mac-arm64/wowsimwotlk -ldflags="$(ELECTRON_LDFLAGS)" ./sim/web/main.go
+
+.PHONY: electron-linux electron-windows electron-mac
+electron-linux: electron-server-linux
+	npx electron-builder --linux --x64
+
+# Building the Windows installer on Linux/macOS needs Wine.
+electron-windows: electron-server-windows
+	npx electron-builder --win --x64
+
+# Only works on macOS; the app is not signed.
+electron-mac: electron-server-mac
+	npx electron-builder --mac --x64 --arm64
+
 sim/core/proto/api.pb.go: proto/*.proto
 	protoc -I=./proto --go_out=./sim/core ./proto/*.proto
 
